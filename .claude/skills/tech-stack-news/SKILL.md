@@ -30,24 +30,63 @@ Apple,Swift;SwiftUI
 2. Set the lookback window: the last 24 hours, unless the user asks for a different period.
 3. Research **every** pair separately. Never merge technologies into one search or skip one. For each pair:
    - Run at least 2 web searches with different angles, for example `"<technology>" release`, `"<technology>" announcement <month> <year>`, `<company> <technology> blog`.
-   - Check the primary sources for that technology (see below) with WebFetch.
-4. Open each candidate item and check its publication date. Drop anything outside the window. Drop rumors, opinion pieces, and articles that only repeat older news.
-5. For each item, record: title, date, a 1–2 sentence summary of what changed and why it matters to developers, and the source URL.
-6. Write the digest (format below).
+   - Check the primary sources for that technology (see below), starting with its official feed.
+4. Open each candidate item and check its publication date against the window (see "Dates" below). Drop anything outside it.
+5. Apply the relevance filter (see "What counts as news" below).
+6. For each item, record: title, date, a 1–2 sentence summary of what changed and why it matters to developers, and the source URL.
+7. Write the digest (format below).
 
 ### Primary sources
 
 Prefer these, in this order:
 
-1. Official blogs and update feeds, such as `devblogs.microsoft.com`, `azure.microsoft.com/updates`, `learn.microsoft.com`, `developer.apple.com/news`, and `swift.org/blog`.
-2. GitHub releases for the technology, such as `github.com/dotnet/core/releases`, `github.com/dotnet/aspnetcore/releases`, and `github.com/swiftlang/swift/releases`. You can also use `gh api` or the releases page's Atom feed (`/releases.atom`).
-3. Well-known tech press, such as InfoQ, The Verge, and heise. Use these only to fill gaps, and link to the original announcement when the article cites one.
+1. **Official RSS/Atom feeds.** Read these first: they list posts with exact publish times and don't depend on JavaScript. Fetch them with `curl -sL --compressed <url>` in Bash, because some are gzip-compressed.
 
-For technologies not listed here, find the equivalent official blog and GitHub repo yourself.
+   | Technology | Feed |
+   |---|---|
+   | Azure (product updates) | `https://www.microsoft.com/releasecommunications/api/v2/azure/rss` |
+   | Azure (blog) | `https://azure.microsoft.com/en-us/blog/feed/` |
+   | .NET, ASP.NET | `https://devblogs.microsoft.com/dotnet/feed/` |
+   | Swift | `https://www.swift.org/atom.xml` |
+   | Apple platforms, SwiftUI | `https://developer.apple.com/news/rss/news.rss` |
+
+   Don't scrape `azure.microsoft.com/updates`. It loads its list with JavaScript and returns no entries; use the product updates feed above instead.
+2. **GitHub releases** for the technology, such as `github.com/dotnet/core/releases`, `github.com/dotnet/aspnetcore/releases`, and `github.com/swiftlang/swift/releases`. Use `gh api` or the releases Atom feed (`/releases.atom`).
+3. **Well-known tech press**, such as InfoQ, The Verge, and heise. Use these only to fill gaps, and link to the original announcement when the article cites one.
+
+For technologies not listed here, find the equivalent official feed, blog and GitHub repo yourself.
+
+### Dates
+
+- Use the exact timestamp from the feed or page whenever there is one, convert it to UTC, and compare it with the window.
+- If a source gives only a date with no time, include the item when that date is on or after the date the window starts, and on or before today. For example, with a window of 2026-10-06 14:51 to 2026-10-07 14:51, a post dated 2026-10-06 is in.
+- Show dates in the report as `YYYY-MM-DD`.
+
+### What counts as news
+
+Include only items that change what developers can use or need to do:
+
+- releases, previews, and GA announcements
+- new features and API changes
+- deprecations, retirements, and breaking changes
+- security fixes and advisories
+- pricing or licensing changes that affect developers
+
+Leave out:
+
+- analyst rankings (Gartner, Forrester), awards, and "named a Leader" posts
+- marketing, customer stories, case studies, and event promos
+- rumors, opinion pieces, and articles that only repeat older news
+
+### Links
+
+- Link only to URLs you actually opened and confirmed load (HTTP 200) with the item's content.
+- Never build or guess a URL from a title or slug. If a feed entry has a `<link>`, use it. If the article page fails to load, link to the feed entry's link only if you confirmed it, otherwise drop the item.
+- A URL you guessed that fails is not a "source unavailable". Leave it out of the report entirely.
 
 ### When a source can't be reached
 
-If a fetch fails (blocked, timeout, 4xx/5xx), try the next source in the list and keep going. One unreachable source must never stop the run or the report. Record every source that failed, with the error, for the "Sources unavailable" section.
+If a primary source fails (blocked, timeout, 4xx/5xx, or a page that renders no content), try the next source in the list and keep going. One unreachable source must never stop the run or the report. Record every source that failed, with the error, for the "Sources unavailable" section.
 
 ## Output
 
@@ -70,7 +109,7 @@ _No notable news._
 ...
 
 ## Sources unavailable
-- `azure.microsoft.com` — blocked by network proxy (Azure checked through search and GitHub instead)
+- `devblogs.microsoft.com/dotnet/feed/` — timeout (.NET checked through GitHub releases and search instead)
 
 ---
 3 items across 2 companies.
