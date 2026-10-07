@@ -13,8 +13,10 @@ import csv
 import datetime as dt
 import email.utils
 import gzip
+import html
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -35,6 +37,8 @@ def parse_args():
     p.add_argument("--feeds", default=str(SKILL_DIR / "feeds.json"))
     p.add_argument("--hours", type=float, default=24)
     p.add_argument("--now", help="window end as ISO 8601 (default: current UTC time)")
+    p.add_argument("--summary-chars", type=int, default=800,
+                   help="max characters of each entry's feed summary to print (0 = none)")
     return p.parse_args()
 
 
@@ -137,8 +141,16 @@ def parse_feed(body):
             "date_only": date_only,
             "title": " ".join(child_text(el, "title").split()) or "(untitled)",
             "url": entry_link(el),
+            "summary": plain_text(child_text(el, "description", "summary", "content", "encoded")),
         })
     return entries, skipped
+
+
+def plain_text(markup):
+    """Strip HTML tags and entities from a feed summary and collapse whitespace."""
+    text = re.sub(r"<(script|style)\b.*?</\1>", " ", markup or "", flags=re.S | re.I)
+    text = html.unescape(re.sub(r"<[^>]+>", " ", text))
+    return " ".join(text.split())
 
 
 def github_releases(repo):
@@ -177,7 +189,8 @@ def release_entries(releases):
         if rel.get("prerelease"):
             title += " [prerelease]"
         entries.append({"published": published, "date_only": date_only,
-                        "title": title, "url": rel.get("html_url", "")})
+                        "title": title, "url": rel.get("html_url", ""),
+                        "summary": " ".join((rel.get("body") or "").split())})
     return entries
 
 
@@ -239,6 +252,11 @@ def main():
             when = e["published"].strftime("%Y-%m-%d") + (" (date only)" if e["date_only"]
                                                           else e["published"].strftime(" %H:%M"))
             print(f"- [{when}] {e['title']} | {e['url']} | via {e['source']}")
+            summary = e.get("summary", "")
+            if args.summary_chars and summary:
+                if len(summary) > args.summary_chars:
+                    summary = summary[:args.summary_chars].rsplit(" ", 1)[0] + " …"
+                print(f"    Summary: {summary}")
 
     print("\n== Sources unavailable")
     print("\n".join(f"- {k}: {v}" for k, v in unavailable.items()) or "(none)")

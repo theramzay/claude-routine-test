@@ -6,7 +6,7 @@ This repo tracks what's new in the technology stacks of big tech companies. A sc
 
 - `tech-stack.csv`: the list of companies and the technologies to track. This is the only input. Edit it to add or remove companies or technologies.
 - `.claude/skills/tech-stack-news/SKILL.md`: the full procedure for building the digest, including CSV format, sources, filtering rules and output format.
-- `.claude/skills/tech-stack-news/feeds.json`: official RSS/Atom feeds and GitHub repos per technology. Add an entry when you add a technology to the CSV; technologies without one are researched with web search only.
+- `.claude/skills/tech-stack-news/feeds.json`: official RSS/Atom feeds per technology. Add an entry when you add a technology to the CSV; technologies without one are researched with web search only.
 - `.claude/skills/tech-stack-news/scripts/fetch_feeds.py`: fetches the feeds and releases and prints entries inside the lookback window. Python 3 standard library only.
 - `reports/YYYY-MM-DD.md`: generated daily digests, one file per UTC date.
 

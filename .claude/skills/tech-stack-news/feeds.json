@@ -8,15 +8,15 @@
   },
   ".NET": {
     "feeds": ["https://devblogs.microsoft.com/dotnet/feed/"],
-    "github": ["dotnet/core"]
+    "github": []
   },
   "ASP.NET": {
     "feeds": ["https://devblogs.microsoft.com/dotnet/feed/"],
-    "github": ["dotnet/aspnetcore"]
+    "github": []
   },
   "Swift": {
     "feeds": ["https://www.swift.org/atom.xml"],
-    "github": ["swiftlang/swift"]
+    "github": []
   },
   "SwiftUI": {
     "feeds": ["https://developer.apple.com/news/rss/news.rss"],
