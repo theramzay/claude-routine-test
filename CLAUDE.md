@@ -20,4 +20,5 @@ This repo tracks what's new in the technology stacks of big tech companies. A sc
 
 - Dates are UTC and use the `YYYY-MM-DD` format.
 - Keep summaries short and factual. Say what changed and why it matters to developers, without marketing language.
-- If the run fails (for example, the CSV is missing or search is unavailable), don't write a partial report. End the session with a clear explanation of what went wrong.
+- Always write and push a report, even on days with no news. If some sources can't be reached, list them under "Sources unavailable" instead of skipping the report.
+- The only reason to skip the report is a missing or empty `tech-stack.csv`, or web search not working at all. In that case, end the session with a clear explanation of what went wrong.
