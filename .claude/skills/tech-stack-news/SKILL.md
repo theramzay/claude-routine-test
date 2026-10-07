@@ -26,39 +26,38 @@ Apple,Swift;SwiftUI
 
 ## Steps
 
-1. Read `tech-stack.csv` and build the list of (company, technology) pairs.
-2. Set the lookback window: the last 24 hours, unless the user asks for a different period.
-3. Research **every** pair separately. Never merge technologies into one search or skip one. For each pair:
-   - Run at least 2 web searches with different angles, for example `"<technology>" release`, `"<technology>" announcement <month> <year>`, `<company> <technology> blog`.
-   - Check the primary sources for that technology (see below), starting with its official feed.
-4. Open each candidate item and check its publication date against the window (see "Dates" below). Drop anything outside it.
-5. Apply the relevance filter (see "What counts as news" below).
-6. For each item, record: title, date, a 1–2 sentence summary of what changed and why it matters to developers, and the source URL.
-7. Write the digest (format below).
+1. Run the feed script from the repo root:
 
-### Primary sources
+   ```bash
+   python3 .claude/skills/tech-stack-news/scripts/fetch_feeds.py
+   ```
 
-Prefer these, in this order:
+   It reads `tech-stack.csv`, sets the window to the last 24 hours (pass `--hours N` if the user asks for a different period), and prints, for every company and technology in CSV order, the official feed posts and GitHub releases published inside the window, in UTC. Its first line is the window; use it in the report.
+   - Exit code 2 means `tech-stack.csv` is missing or empty. Stop and report it.
+   - Use the script's output as given. Don't write your own feed-parsing code, and don't re-fetch the feeds it already read.
+   - Copy every entry under "Sources unavailable" into the report's "Sources unavailable" section.
+2. Supplement **every** technology separately with web search. Never merge technologies into one search or skip one. Run at least 2 searches per technology with different angles, for example `"<technology>" release`, `"<technology>" announcement <month> <year>`, `<company> <technology> blog`. For a technology the script marks "No feeds configured", web search and its official blog are the only sources.
+3. Check each candidate from web search against the window (see "Dates" below). Drop anything outside it. Script entries are already inside the window.
+4. Apply the relevance filter (see "What counts as news" below) to all candidates, including the script's. The same post can appear under several technologies (for example the .NET blog under both .NET and ASP.NET): put it under the one it's actually about.
+5. For each item you keep, open its URL to read what changed (see "Links" below). Record: title, date, a 1–2 sentence summary of what changed and why it matters to developers, and the source URL.
+6. Write the digest (format below).
 
-1. **Official RSS/Atom feeds.** Read these first: they list posts with exact publish times and don't depend on JavaScript. Fetch them with `curl -sL --compressed <url>` in Bash, because some are gzip-compressed.
+### Sources
 
-   | Technology | Feed |
-   |---|---|
-   | Azure (product updates) | `https://www.microsoft.com/releasecommunications/api/v2/azure/rss` |
-   | Azure (blog) | `https://azure.microsoft.com/en-us/blog/feed/` |
-   | .NET, ASP.NET | `https://devblogs.microsoft.com/dotnet/feed/` |
-   | Swift | `https://www.swift.org/atom.xml` |
-   | Apple platforms, SwiftUI | `https://developer.apple.com/news/rss/news.rss` |
+Use these, in this order:
 
-   Don't scrape `azure.microsoft.com/updates`. It loads its list with JavaScript and returns no entries; use the product updates feed above instead.
-2. **GitHub releases** for the technology, such as `github.com/dotnet/core/releases`, `github.com/dotnet/aspnetcore/releases`, and `github.com/swiftlang/swift/releases`. Use `gh api` or the releases Atom feed (`/releases.atom`).
+1. **Official feeds and GitHub releases**, read by the script. The list per technology is in `.claude/skills/tech-stack-news/feeds.json`. The script reads GitHub releases with `gh api` and falls back to the GitHub REST API if `gh` isn't available.
+2. **Official blogs and docs** that have no feed.
 3. **Well-known tech press**, such as InfoQ, The Verge, and heise. Use these only to fill gaps, and link to the original announcement when the article cites one.
 
-For technologies not listed here, find the equivalent official feed, blog and GitHub repo yourself.
+Don't scrape `azure.microsoft.com/updates`. It loads its list with JavaScript and returns no entries; the Azure product updates feed in `feeds.json` covers it.
+
+To track a new technology's official feed or GitHub repo, add it to `feeds.json` under the technology's exact name from `tech-stack.csv`.
 
 ### Dates
 
-- Use the exact timestamp from the feed or page whenever there is one, convert it to UTC, and compare it with the window.
+- The script already applies these rules to feed and release entries.
+- For other sources, use the exact timestamp whenever there is one, convert it to UTC, and compare it with the window.
 - If a source gives only a date with no time, include the item when that date is on or after the date the window starts, and on or before today. For example, with a window of 2026-10-06 14:51 to 2026-10-07 14:51, a post dated 2026-10-06 is in.
 - Show dates in the report as `YYYY-MM-DD`.
 
@@ -109,7 +108,7 @@ _No notable news._
 ...
 
 ## Sources unavailable
-- `devblogs.microsoft.com/dotnet/feed/` — timeout (.NET checked through GitHub releases and search instead)
+- `https://devblogs.microsoft.com/dotnet/feed/` — URLError: timed out (.NET checked through GitHub releases and search instead)
 
 ---
 3 items across 2 companies.
