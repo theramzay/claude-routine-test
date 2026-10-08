@@ -1,0 +1,502 @@
+<title>Tech Stack News</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: a changelog ledger. Each UTC day is a block with a mono date rail on the left;
+   inside it, companies, then technologies, then entries tagged by kind. Filters sit above. */
+:root {
+  --paper: #f2f4f6;
+  --sheet: #ffffff;
+  --ink: #15212c;
+  --ink-2: #4a5866;
+  --ink-3: #7c8996;
+  --rule: #dde2e8;
+  --signal: #0a6f6b;
+  --signal-soft: #dcefee;
+
+  --k-retire: #9a5b00;  --k-retire-bg: #fbefd9;
+  --k-preview: #5b3fb0; --k-preview-bg: #ece7fb;
+  --k-release: #1d7a3a; --k-release-bg: #def3e4;
+  --k-security: #b42318; --k-security-bg: #fde4e1;
+  --k-update: #35536e;  --k-update-bg: #e3ebf3;
+
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f151b; --sheet: #161e26; --ink: #e6ecf1; --ink-2: #a9b6c2; --ink-3: #7b8895;
+    --rule: #26313c; --signal: #4cc7bf; --signal-soft: #143a39;
+    --k-retire: #f0b45a; --k-retire-bg: #3a2a10;
+    --k-preview: #b9a5f5; --k-preview-bg: #2a2147;
+    --k-release: #6fd18f; --k-release-bg: #15341f;
+    --k-security: #ff8a7f; --k-security-bg: #42191a;
+    --k-update: #9cbbd8; --k-update-bg: #1e2c3a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f151b; --sheet: #161e26; --ink: #e6ecf1; --ink-2: #a9b6c2; --ink-3: #7b8895;
+  --rule: #26313c; --signal: #4cc7bf; --signal-soft: #143a39;
+  --k-retire: #f0b45a; --k-retire-bg: #3a2a10;
+  --k-preview: #b9a5f5; --k-preview-bg: #2a2147;
+  --k-release: #6fd18f; --k-release-bg: #15341f;
+  --k-security: #ff8a7f; --k-security-bg: #42191a;
+  --k-update: #9cbbd8; --k-update-bg: #1e2c3a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 15px/1.55 var(--f-body);
+  padding-inline: 16px;
+  padding-block: 0 64px;
+}
+.wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 28px; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; border-radius: 4px; }
+
+/* Masthead */
+header.mast {
+  display: grid; gap: 14px;
+  padding-block: 36px 4px;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 18px;
+}
+.mast-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+h1 {
+  font: 700 clamp(30px, 6vw, 46px)/1 var(--f-display);
+  letter-spacing: -0.01em; margin: 0; text-wrap: balance;
+}
+.status { font: 12.5px/1.4 var(--f-mono); color: var(--ink-2); display: flex; align-items: center; gap: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); flex: none; }
+.dot.live { background: var(--signal); box-shadow: 0 0 0 3px var(--signal-soft); }
+.lede { margin: 0; color: var(--ink-2); max-width: 62ch; }
+
+/* Filters */
+.filters { display: grid; gap: 10px; }
+.frow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.flabel { font: 500 11px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); width: 92px; flex: none; }
+.chip {
+  font: 500 13px/1 var(--f-body); color: var(--ink-2);
+  background: transparent; border: 1px solid var(--rule); border-radius: 999px;
+  padding: 7px 12px; cursor: pointer;
+}
+.chip:hover { border-color: var(--ink-3); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.search {
+  flex: 1 1 220px; min-width: 0;
+  font: 14px/1 var(--f-body); color: var(--ink);
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 9px 12px;
+}
+.search::placeholder { color: var(--ink-3); }
+.count { font: 12.5px/1 var(--f-mono); color: var(--ink-3); margin-left: auto; }
+
+/* Day blocks */
+.days { display: grid; gap: 34px; }
+.day { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 0 28px; }
+.rail { position: relative; }
+.rail-in { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 4px; }
+.d-date { font: 500 15px/1.2 var(--f-mono); }
+.d-week { font: 600 12px/1 var(--f-display); letter-spacing: .1em; text-transform: uppercase; color: var(--signal); }
+.d-meta { font: 12px/1.45 var(--f-mono); color: var(--ink-3); }
+.body { display: grid; gap: 22px; min-width: 0; border-left: 1px solid var(--rule); padding-left: 28px; }
+
+.company { display: grid; gap: 14px; }
+.company h2 { font: 700 21px/1.1 var(--f-display); margin: 0; letter-spacing: .005em; }
+.tech { display: grid; gap: 10px; }
+.tech h3 {
+  font: 600 12px/1 var(--f-mono); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-2); margin: 0; display: flex; align-items: center; gap: 10px;
+}
+.tech h3::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+.item {
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 14px 16px; display: grid; gap: 6px; min-width: 0;
+}
+.item-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.kind {
+  font: 600 10.5px/1 var(--f-mono); letter-spacing: .07em; text-transform: uppercase;
+  padding: 4px 7px; border-radius: 4px; color: var(--k-update); background: var(--k-update-bg);
+}
+.kind.retirement { color: var(--k-retire); background: var(--k-retire-bg); }
+.kind.preview { color: var(--k-preview); background: var(--k-preview-bg); }
+.kind.release, .kind.feature { color: var(--k-release); background: var(--k-release-bg); }
+.kind.security { color: var(--k-security); background: var(--k-security-bg); }
+.time { font: 12px/1 var(--f-mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.item h4 { margin: 0; font: 600 16px/1.35 var(--f-body); text-wrap: pretty; }
+.item h4 a { text-decoration: none; }
+.item h4 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.item p { margin: 0; color: var(--ink-2); max-width: 70ch; }
+.src { font: 12px/1.3 var(--f-mono); color: var(--ink-3); overflow-wrap: anywhere; }
+.src a { color: var(--signal); text-decoration: none; }
+.src a:hover { text-decoration: underline; }
+
+.quiet { font-size: 13.5px; color: var(--ink-3); margin: 0; }
+.quiet b { font-weight: 500; color: var(--ink-2); }
+.unavail { font: 12.5px/1.5 var(--f-body); color: var(--ink-2); border: 1px dashed var(--rule); border-radius: 8px; padding: 10px 12px; }
+.unavail summary { cursor: pointer; font: 500 12px/1.4 var(--f-mono); color: var(--k-retire); }
+.unavail ul { margin: 8px 0 0; padding-left: 18px; }
+.unavail code { font: 12px var(--f-mono); overflow-wrap: anywhere; }
+
+.empty {
+  border: 1px dashed var(--rule); border-radius: 12px; padding: 36px 24px;
+  display: grid; gap: 8px; justify-items: start; background: var(--sheet);
+}
+.empty h2 { margin: 0; font: 700 22px/1.2 var(--f-display); }
+.empty p { margin: 0; color: var(--ink-2); max-width: 60ch; }
+.more {
+  justify-self: start; font: 500 13px/1 var(--f-body); color: var(--ink); background: var(--sheet);
+  border: 1px solid var(--rule); border-radius: 8px; padding: 10px 14px; cursor: pointer;
+}
+.more:hover { border-color: var(--ink-3); }
+
+@media (max-width: 640px) {
+  .day { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .rail-in { position: static; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+  .body { border-left: 0; padding-left: 0; }
+  .flabel { width: 100%; }
+  .count { margin-left: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .item { transition: border-color .15s; }
+  .item:hover { border-color: var(--ink-3); }
+}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="mast-top">
+      <h1>Tech Stack News</h1>
+      <div class="status"><span class="dot" id="dot"></span><span id="status">Connecting…</span></div>
+    </div>
+    <p class="lede">Releases, previews, retirements and security fixes for the stacks we track, collected every day at 07:00 UTC from official feeds and the web.</p>
+  </header>
+
+  <section class="filters" aria-label="Filters">
+    <div class="frow" id="row-company"><span class="flabel">Company</span></div>
+    <div class="frow" id="row-tech"><span class="flabel">Technology</span></div>
+    <div class="frow" id="row-kind"><span class="flabel">Kind</span></div>
+    <div class="frow">
+      <label class="flabel" for="q">Search</label>
+      <input class="search" id="q" type="search" placeholder="Title or summary, e.g. Java, AKS, retirement">
+      <span class="count" id="count"></span>
+    </div>
+  </section>
+
+  <main class="days" id="days">
+    <div class="empty">
+      <h2>Loading the latest digests</h2>
+      <p>News items appear here as soon as the store answers.</p>
+    </div>
+  </main>
+</div>
+
+<script>
+(() => {
+  const KINDS = [
+    ["release", "Release"], ["feature", "Feature"], ["preview", "Preview"],
+    ["retirement", "Retirement"], ["security", "Security"], ["update", "Update"],
+  ];
+  const KIND_LABEL = Object.fromEntries(KINDS);
+  const PAGE = 14;
+
+  const state = { items: [], runs: [], company: "", tech: "", kind: "", q: "", shown: PAGE, ready: { items: false, runs: false } };
+  try {
+    const saved = JSON.parse(localStorage.getItem("tsn-filters") || "{}");
+    for (const k of ["company", "tech", "kind"]) if (typeof saved[k] === "string") state[k] = saved[k];
+  } catch (e) {}
+
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  };
+  const safeUrl = (u) => (typeof u === "string" && /^https?:\/\//i.test(u) ? u : null);
+  const host = (u) => { try { return new URL(u).host.replace(/^www\./, ""); } catch (e) { return ""; } };
+  const str = (v) => (typeof v === "string" ? v : "");
+
+  function saveFilters() {
+    try { localStorage.setItem("tsn-filters", JSON.stringify({ company: state.company, tech: state.tech, kind: state.kind })); } catch (e) {}
+  }
+
+  function setStatus(text, live) {
+    $("status").textContent = text;
+    $("dot").classList.toggle("live", !!live);
+  }
+
+  function fmtDay(day) {
+    const d = new Date(day + "T00:00:00Z");
+    if (isNaN(d)) return { date: day, week: "" };
+    return {
+      date: day,
+      week: d.toLocaleDateString(undefined, { weekday: "long", timeZone: "UTC" }),
+    };
+  }
+  function fmtTime(iso) {
+    const d = new Date(iso);
+    if (!iso || isNaN(d)) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+    return d.toISOString().slice(0, 16).replace("T", " ") + " UTC";
+  }
+
+  // Companies and technologies in the order the routine tracks them (latest run first).
+  function catalog() {
+    const pairs = [];
+    const seen = new Set();
+    const add = (c, t) => {
+      const key = c + "\u0000" + t;
+      if (c && t && !seen.has(key)) { seen.add(key); pairs.push([c, t]); }
+    };
+    for (const r of state.runs) for (const p of (Array.isArray(r.techs) ? r.techs : [])) add(str(p.company), str(p.tech));
+    for (const i of state.items) add(i.company, i.tech);
+    return pairs;
+  }
+
+  function chips(rowId, values, key, labelOf) {
+    const row = $(rowId);
+    row.querySelectorAll(".chip").forEach((n) => n.remove());
+    const make = (value, label) => {
+      const b = el("button", "chip", label);
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(state[key] === value));
+      b.addEventListener("click", () => {
+        state[key] = state[key] === value ? "" : value;
+        if (key === "company" && state.tech && !catalog().some(([c, t]) => t === state.tech && (!state.company || c === state.company))) state.tech = "";
+        state.shown = PAGE;
+        saveFilters();
+        render();
+      });
+      row.appendChild(b);
+    };
+    make("", "All");
+    for (const v of values) make(v, labelOf ? labelOf(v) : v);
+  }
+
+  function matches(i) {
+    if (state.company && i.company !== state.company) return false;
+    if (state.tech && i.tech !== state.tech) return false;
+    if (state.kind && (i.kind || "update") !== state.kind) return false;
+    if (state.q) {
+      const hay = (i.title + " " + i.summary + " " + i.tech + " " + i.company).toLowerCase();
+      if (!hay.includes(state.q)) return false;
+    }
+    return true;
+  }
+
+  function render() {
+    const pairs = catalog();
+    const companies = [...new Set(pairs.map(([c]) => c))];
+    const techs = [...new Set(pairs.filter(([c]) => !state.company || c === state.company).map(([, t]) => t))];
+    chips("row-company", companies, "company");
+    chips("row-tech", techs, "tech");
+    chips("row-kind", KINDS.map(([k]) => k), "kind", (k) => KIND_LABEL[k]);
+
+    const days = $("days");
+    days.replaceChildren();
+
+    if (!state.ready.items || !state.ready.runs) {
+      const e = el("div", "empty");
+      e.append(el("h2", null, "Loading the latest digests"), el("p", null, "News items appear here as soon as the store answers."));
+      days.append(e);
+      return;
+    }
+
+    const filtering = !!(state.company || state.tech || state.kind || state.q);
+    const visible = state.items.filter(matches);
+    $("count").textContent = filtering ? `${visible.length} of ${state.items.length} items` : `${state.items.length} items`;
+
+    const runByDay = new Map(state.runs.map((r) => [str(r.day), r]));
+    const byDay = new Map();
+    for (const i of visible) {
+      if (!byDay.has(i.day)) byDay.set(i.day, []);
+      byDay.get(i.day).push(i);
+    }
+    let dayList = [...new Set([...byDay.keys(), ...(filtering ? [] : runByDay.keys())])].filter(Boolean);
+    dayList.sort((a, b) => (a < b ? 1 : -1));
+
+    if (!dayList.length) {
+      const e = el("div", "empty");
+      if (filtering) {
+        e.append(el("h2", null, "Nothing matches these filters"), el("p", null, "Clear a filter or change the search to see more items."));
+      } else {
+        e.append(
+          el("h2", null, "No digests yet"),
+          el("p", null, "The daily routine adds news here every morning at 07:00 UTC. The first digest shows up after its next run."),
+        );
+      }
+      days.append(e);
+      return;
+    }
+
+    const total = dayList.length;
+    dayList = dayList.slice(0, state.shown);
+    for (const day of dayList) days.append(renderDay(day, byDay.get(day) || [], runByDay.get(day), pairs, filtering));
+
+    if (total > dayList.length) {
+      const b = el("button", "more", `Show older days (${total - dayList.length} more)`);
+      b.type = "button";
+      b.addEventListener("click", () => { state.shown += PAGE; render(); });
+      days.append(b);
+    }
+  }
+
+  function renderDay(day, items, run, pairs, filtering) {
+    const sec = el("section", "day");
+    sec.setAttribute("aria-label", day);
+    const f = fmtDay(day);
+    const rail = el("div", "rail");
+    const ri = el("div", "rail-in");
+    ri.append(el("div", "d-week", f.week), el("div", "d-date", f.date));
+    const n = items.length;
+    ri.append(el("div", "d-meta", `${n} ${n === 1 ? "item" : "items"}`));
+    if (run && run.windowStart && run.windowEnd) {
+      ri.append(el("div", "d-meta", `${str(run.windowStart).slice(11, 16)}→${str(run.windowEnd).slice(11, 16)} UTC`));
+    }
+    rail.append(ri);
+
+    const body = el("div", "body");
+    const runPairs = run && Array.isArray(run.techs) ? run.techs.map((p) => [str(p.company), str(p.tech)]) : pairs;
+    const order = [];
+    const seen = new Set();
+    for (const p of [...runPairs, ...items.map((i) => [i.company, i.tech])]) {
+      const k = p[0] + "\u0000" + p[1];
+      if (!seen.has(k)) { seen.add(k); order.push(p); }
+    }
+
+    const companies = [...new Set(order.map(([c]) => c))];
+    for (const company of companies) {
+      if (state.company && company !== state.company) continue;
+      const cTechs = order.filter(([c]) => c === company).map(([, t]) => t).filter((t) => !state.tech || t === state.tech);
+      const withNews = cTechs.filter((t) => items.some((i) => i.company === company && i.tech === t));
+      const quiet = cTechs.filter((t) => !withNews.includes(t));
+      if (!withNews.length && filtering) continue;
+
+      const c = el("div", "company");
+      c.append(el("h2", null, company));
+      for (const tech of withNews) {
+        const t = el("div", "tech");
+        t.append(el("h3", null, tech));
+        const list = items.filter((i) => i.company === company && i.tech === tech)
+          .sort((a, b) => (a.published < b.published ? 1 : -1));
+        for (const i of list) t.append(renderItem(i));
+        c.append(t);
+      }
+      if (quiet.length && !filtering) {
+        const q = el("p", "quiet");
+        q.append(el("b", null, "No notable news: "), document.createTextNode(quiet.join(" · ")));
+        c.append(q);
+      }
+      body.append(c);
+    }
+
+    const unavailable = run && Array.isArray(run.unavailable) ? run.unavailable : [];
+    if (unavailable.length && !filtering) {
+      const d = el("details", "unavail");
+      d.append(el("summary", null, `${unavailable.length} ${unavailable.length === 1 ? "source" : "sources"} unavailable during this run`));
+      const ul = el("ul");
+      for (const u of unavailable) {
+        const li = el("li");
+        li.append(el("code", null, str(u.source)), document.createTextNode(" — " + str(u.error)));
+        ul.append(li);
+      }
+      d.append(ul);
+      body.append(d);
+    }
+
+    sec.append(rail, body);
+    return sec;
+  }
+
+  function renderItem(i) {
+    const a = el("article", "item");
+    const top = el("div", "item-top");
+    const kind = KIND_LABEL[i.kind] ? i.kind : "update";
+    top.append(el("span", "kind " + kind, KIND_LABEL[kind]));
+    const t = fmtTime(i.published);
+    if (t) top.append(el("span", "time", t));
+    a.append(top);
+
+    const h = el("h4");
+    const url = safeUrl(i.url);
+    if (url) {
+      const link = el("a", null, i.title);
+      link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer";
+      h.append(link);
+    } else {
+      h.textContent = i.title;
+    }
+    a.append(h);
+    if (i.summary) a.append(el("p", null, i.summary));
+    if (url) {
+      const s = el("div", "src");
+      const link = el("a", null, host(url));
+      link.href = url; link.target = "_blank"; link.rel = "noopener noreferrer";
+      s.append(link);
+      if (i.source && host(i.source) && host(i.source) !== host(url)) s.append(document.createTextNode(" · via " + host(i.source)));
+      a.append(s);
+    }
+    return a;
+  }
+
+  function normalizeItem(doc) {
+    const d = doc.data() || {};
+    return {
+      id: doc.id,
+      day: str(d.day),
+      published: str(d.published),
+      company: str(d.company),
+      tech: str(d.tech),
+      title: str(d.title) || "(untitled)",
+      summary: str(d.summary),
+      kind: str(d.kind).toLowerCase(),
+      url: str(d.url),
+      source: str(d.source),
+    };
+  }
+
+  let qTimer;
+  $("q").addEventListener("input", (e) => {
+    clearTimeout(qTimer);
+    qTimer = setTimeout(() => { state.q = e.target.value.trim().toLowerCase(); state.shown = PAGE; render(); }, 150);
+  });
+
+  render();
+
+  (async () => {
+    const db = window.claude && window.claude.use ? await window.claude.use("db") : null;
+    if (!db) {
+      setStatus("Offline", false);
+      const days = $("days");
+      days.replaceChildren();
+      const e = el("div", "empty");
+      e.append(el("h2", null, "The news store isn't available here"), el("p", null, "Open this page on claude.ai while signed in to read the daily digests."));
+      days.append(e);
+      return;
+    }
+    setStatus("Live", true);
+    const fail = (err) => {
+      setStatus(err && err.code === "revoked" ? "Access ended" : "Couldn't load news, reload to retry", false);
+    };
+    db.collection("items").orderBy("day", "desc").limit(1000).onSnapshot((snap) => {
+      state.items = snap.docs.filter((d) => d.exists).map(normalizeItem).filter((i) => i.day);
+      state.ready.items = true;
+      render();
+    }, fail);
+    db.collection("runs").orderBy("day", "desc").limit(400).onSnapshot((snap) => {
+      state.runs = snap.docs.filter((d) => d.exists).map((d) => d.data() || {});
+      state.ready.runs = true;
+      const latest = state.runs[0];
+      if (latest && latest.windowEnd) setStatus(`Live · last run ${str(latest.windowEnd).slice(0, 16).replace("T", " ")} UTC`, true);
+      render();
+    }, fail);
+  })();
+})();
+</script>

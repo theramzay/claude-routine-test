@@ -124,3 +124,60 @@ _No notable news._
 - Every item must link to its source. Don't include items you couldn't verify.
 - Include the "Sources unavailable" section only when at least one fetch failed.
 - End with a one-line summary of the item count.
+
+## Publish to the news page
+
+After writing the report file, publish the same digest to the Tech Stack News page, a claude.ai artifact whose URL is in `.claude/skills/tech-stack-news/news-page.json` (`url`). The page reads its database live, so it never needs republishing; you only write data.
+
+Use the `ArtifactData` tool (load it with ToolSearch `select:ArtifactData` if it isn't loaded) with that `url`. Don't publish or edit the page itself with the `Artifact` tool.
+
+### What to write
+
+One `runs` document for the day, with `doc_id` = today's UTC date (`YYYY-MM-DD`):
+
+```json
+{
+  "day": "2026-10-07",
+  "windowStart": "2026-10-06T15:22:00Z",
+  "windowEnd": "2026-10-07T15:22:00Z",
+  "itemCount": 6,
+  "techs": [{"company": "Microsoft", "tech": "Azure"}, {"company": "Apple", "tech": "Swift"}],
+  "unavailable": [{"source": "https://devblogs.microsoft.com/dotnet/feed/", "error": "URLError: timed out"}]
+}
+```
+
+- `techs` lists every company and technology from `tech-stack.csv`, in CSV order, including ones with no news. The page uses it to show "No notable news" lines.
+- `unavailable` matches the report's "Sources unavailable" section; use `[]` when nothing failed.
+
+One `items` document per news item in the report, with exactly these fields:
+
+```json
+{
+  "day": "2026-10-07",
+  "published": "2026-10-06T22:37:54Z",
+  "company": "Microsoft",
+  "tech": "Azure",
+  "kind": "retirement",
+  "title": "Retirement: Pod name dimension in AKS pod platform metrics",
+  "summary": "Same 1–2 sentences as in the report.",
+  "url": "https://azure.microsoft.com/updates?id=570232",
+  "source": "https://www.microsoft.com/releasecommunications/api/v2/azure/rss"
+}
+```
+
+- `day` is the report's date. `published` is the item's publish time in UTC ISO 8601 (`...Z`), or `YYYY-MM-DD` when only a date is known.
+- `company` and `tech` are spelled exactly as in `tech-stack.csv`.
+- `kind` is one of: `release` (a new version is out, including GA), `feature` (a new capability or API in an existing version), `preview` (preview, beta, or RC), `retirement` (deprecation, end of support, or breaking removal), `security` (vulnerability fix or advisory), or `update` (anything else, such as pricing or licensing).
+- `source` is the feed the item came from, or the search result page's site for web search items.
+- `doc_id` is `<day>-<slug>`, where `<slug>` is the item's `url` lowercased, with the `https://` prefix removed and every run of characters other than `a-z` and `0-9` replaced by a single `-`, trimmed of leading and trailing `-`, and cut to 120 characters. For example, `https://azure.microsoft.com/updates?id=570232` on 2026-10-07 becomes `2026-10-07-azure-microsoft-com-updates-id-570232`.
+
+### How to write it
+
+1. Read what already exists for today: `query` on `items` with `where: [["day", "==", "<today>"]]` and `limit: 1000`, and `get` on `runs` / `<today>`. Note each document's `version`.
+2. Send one `batch` (up to 50 writes; split into several batches if there are more):
+   - `set` the `runs` document and every item document. For a document that already exists, pass its `version` as `if_version`; omit `if_version` for new ones.
+   - `delete` every existing `items` document for today that isn't in the new set (with its `if_version`). This keeps a second run on the same day from leaving stale items.
+3. If a batch fails because a version changed, read again and redo it once.
+4. On days with no news, still write the `runs` document (with `itemCount: 0`) so the page shows the day.
+
+If publishing fails after one retry, keep the report file and push it as usual, and say in your final message that the news page wasn't updated, with the exact error. A failed publish never stops the report.

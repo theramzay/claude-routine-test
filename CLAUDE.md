@@ -8,6 +8,8 @@ This repo tracks what's new in the technology stacks of big tech companies. A sc
 - `.claude/skills/tech-stack-news/SKILL.md`: the full procedure for building the digest, including CSV format, sources, filtering rules and output format.
 - `.claude/skills/tech-stack-news/feeds.json`: official RSS/Atom feeds per technology. Add an entry when you add a technology to the CSV; technologies without one are researched with web search only.
 - `.claude/skills/tech-stack-news/scripts/fetch_feeds.py`: fetches the feeds and releases and prints entries inside the lookback window. Python 3 standard library only.
+- `.claude/skills/tech-stack-news/news-page.json`: the URL of the Tech Stack News page (a claude.ai artifact) that each run also publishes to.
+- `artifacts/tech-stack-news.html`: source of that page. It reads its data live from the artifact's database; daily runs never republish it.
 - `reports/YYYY-MM-DD.md`: generated daily digests, one file per UTC date.
 
 ## When running the daily routine
@@ -15,8 +17,9 @@ This repo tracks what's new in the technology stacks of big tech companies. A sc
 1. Use the `tech-stack-news` skill and follow it exactly.
 2. Treat `tech-stack.csv` as the single source of truth. Don't add companies or technologies that aren't in it.
 3. Only report news you verified from a source with a publication date inside the lookback window. Every item needs a link.
-4. Write only `reports/<today>.md`. Don't modify `tech-stack.csv`, the skill, or older reports.
+4. Write only `reports/<today>.md`. Don't modify `tech-stack.csv`, the skill, the page source, or older reports.
 5. Commit the report with the message `report: tech stack news YYYY-MM-DD` and push it to `main`.
+6. Publish the same digest to the news page's database, as described in the skill's "Publish to the news page" section. Write only today's `runs` and `items` documents.
 
 ## Conventions
 
